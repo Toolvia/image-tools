@@ -1,0 +1,6 @@
+{
+  "name": "PicSwift - Online Image Processor & Compressor",
+  "description": "Fast online image processing tool: compress JPG, PNG, WebP, resize, crop, and convert formats. 100% browser-based & privacy focused.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
