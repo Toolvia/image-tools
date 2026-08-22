@@ -10,7 +10,7 @@ declare global {
 export function initGA(measurementId: string): void {
   if (!measurementId || typeof window === 'undefined') return;
 
-  // Clean existing script if any
+  // If already loaded with the same ID, do nothing
   const existingScript = document.getElementById('ga-gtag-script');
   if (existingScript) {
     existingScript.remove();
@@ -36,9 +36,19 @@ export function initGA(measurementId: string): void {
   console.log(`[Google Analytics] Initialized with ID: ${measurementId}`);
 }
 
+export function trackPageView(path: string, title?: string): void {
+  if (typeof window !== 'undefined' && window.gtag) {
+    window.gtag('event', 'page_view', {
+      page_path: path,
+      page_title: title || document.title,
+    });
+  }
+}
+
 export function trackEvent(eventName: string, params: Record<string, any> = {}): void {
   if (typeof window !== 'undefined' && window.gtag) {
     window.gtag('event', eventName, params);
   }
   console.log(`[GA Event Tracked] ${eventName}`, params);
 }
+

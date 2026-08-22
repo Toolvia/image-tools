@@ -6,6 +6,24 @@ export const SITE_DOMAIN = 'https://toolvia.github.io';
 export const SITE_URL = `${SITE_DOMAIN}${BASE_PATH}`;
 
 /**
+ * Checks if the current URL points to the secret admin portal (/admin, /#admin, ?admin=true)
+ */
+export function isAdminRoute(): boolean {
+  if (typeof window === 'undefined') return false;
+  const pathname = window.location.pathname.toLowerCase();
+  const hash = window.location.hash.toLowerCase();
+  const search = window.location.search.toLowerCase();
+
+  return (
+    pathname.endsWith('/admin') ||
+    pathname.endsWith('/admin/') ||
+    hash.includes('admin') ||
+    search.includes('admin=true') ||
+    search.includes('page=admin')
+  );
+}
+
+/**
  * Parses the current browser URL to find matching PresetTool and ToolType.
  * Supports:
  * - Direct path matching: /image-tools/compress-jpg, /image-tools/jpg-to-png

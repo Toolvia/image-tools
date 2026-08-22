@@ -1,5 +1,5 @@
 import React from 'react';
-import { AD_CONFIG, AdConfig } from '../config';
+import { getStoredAdConfig, AdConfig } from '../config';
 import { ExternalLink, Sparkles, Shield, Server, Zap } from 'lucide-react';
 
 interface BannerAdProps {
@@ -10,34 +10,35 @@ interface BannerAdProps {
 
 export const BannerAd: React.FC<BannerAdProps> = ({
   type,
-  settings = AD_CONFIG,
+  settings,
   className = '',
 }) => {
-  if (!settings.enableAds) return null;
+  const currentSettings = settings || getStoredAdConfig();
+  if (!currentSettings.enableAds) return null;
 
   const getSlot = () => {
     switch (type) {
       case 'header':
-        return settings.headerSlot;
+        return currentSettings.headerSlot;
       case 'sidebar':
-        return settings.sidebarSlot;
+        return currentSettings.sidebarSlot;
       case 'download':
-        return settings.downloadSlot;
+        return currentSettings.downloadSlot;
       case 'skyscraper-left':
-        return settings.skyscraperLeftSlot;
+        return currentSettings.skyscraperLeftSlot;
       case 'skyscraper-right':
-        return settings.skyscraperRightSlot;
+        return currentSettings.skyscraperRightSlot;
       case 'inline':
       default:
-        return settings.inlineSlot;
+        return currentSettings.inlineSlot;
     }
   };
 
   const slotId = getSlot();
-  const isRealConfigured = settings.adSenseClientId && slotId;
+  const isRealConfigured = currentSettings.adSenseClientId && slotId;
 
   // Render real AdSense script block if configured
-  if (isRealConfigured && !settings.showDemoAds) {
+  if (isRealConfigured && !currentSettings.showDemoAds) {
     const isSkyscraper = type === 'skyscraper-left' || type === 'skyscraper-right';
     return (
       <div className={`flex flex-col items-center justify-center overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 p-2 ${className}`}>
@@ -50,7 +51,7 @@ export const BannerAd: React.FC<BannerAdProps> = ({
             minWidth: isSkyscraper ? '160px' : 'auto',
             minHeight: isSkyscraper ? '600px' : 'auto',
           }}
-          data-ad-client={settings.adSenseClientId}
+          data-ad-client={currentSettings.adSenseClientId}
           data-ad-slot={slotId}
           data-ad-format={isSkyscraper ? 'vertical' : 'auto'}
           data-full-width-responsive="true"
@@ -58,6 +59,7 @@ export const BannerAd: React.FC<BannerAdProps> = ({
       </div>
     );
   }
+
 
   // Skyscraper Left Banner (160x600 style)
   if (type === 'skyscraper-left') {

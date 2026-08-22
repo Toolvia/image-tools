@@ -6,10 +6,15 @@ import {
   CropRect,
 } from './types';
 import { TOOL_PRESETS } from './data/presets';
-import { AD_CONFIG, ANALYTICS_CONFIG } from './config';
+import {
+  getStoredAdConfig,
+  getStoredAnalyticsConfig,
+  AdConfig,
+  AnalyticsConfig,
+} from './config';
 import { processImage, createBatchZip, downloadFile, getImageDimensions } from './utils/imageProcessor';
-import { initGA, trackEvent } from './utils/analytics';
-import { getCurrentRouteInfo, navigateToPreset, updateDocumentMeta } from './utils/router';
+import { initGA, trackEvent, trackPageView } from './utils/analytics';
+import { getCurrentRouteInfo, navigateToPreset, updateDocumentMeta, isAdminRoute } from './utils/router';
 
 // Components
 import { Header } from './components/Header';
@@ -22,6 +27,7 @@ import { BannerAd } from './components/BannerAd';
 import { DownloadModal } from './components/DownloadModal';
 import { ToolDirectory } from './components/ToolDirectory';
 import { SeoArticleSection } from './components/SeoArticleSection';
+import { AdminPanel } from './components/AdminPanel';
 
 import {
   Zap,
@@ -44,6 +50,11 @@ export default function App() {
   const [targetFormat, setTargetFormat] = useState<string>(initialRoute.preset.toFormat || 'jpg');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
+  // Dynamic Admin & Config State
+  const [adConfig, setAdConfig] = useState<AdConfig>(getStoredAdConfig());
+  const [analyticsConfig, setAnalyticsConfig] = useState<AnalyticsConfig>(getStoredAnalyticsConfig());
+  const [showAdminModal, setShowAdminModal] = useState<boolean>(isAdminRoute());
+
   // Resize Custom State
   const [customWidth, setCustomWidth] = useState<number | undefined>();
   const [customHeight, setCustomHeight] = useState<number | undefined>();
@@ -63,6 +74,36 @@ export default function App() {
     return false;
   });
 
+  // Listen for dynamic config changes (from Admin Panel saves)
+  useEffect(() => {
+    const handleConfigUpdate = () => {
+      const newAdConfig = getStoredAdConfig();
+      const newAnalyticsConfig = getStoredAnalyticsConfig();
+      setAdConfig(newAdConfig);
+      setAnalyticsConfig(newAnalyticsConfig);
+
+      if (newAnalyticsConfig.enabled && newAnalyticsConfig.gaMeasurementId) {
+        initGA(newAnalyticsConfig.gaMeasurementId);
+      }
+    };
+
+    window.addEventListener('app_config_updated', handleConfigUpdate);
+    return () => window.removeEventListener('app_config_updated', handleConfigUpdate);
+  }, []);
+
+  // Listen for secret keyboard shortcut (Ctrl + Shift + A or Cmd + Shift + A) to open Admin
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        setShowAdminModal((prev) => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Apply Theme Mode
   useEffect(() => {
     if (darkMode) {
@@ -76,8 +117,9 @@ export default function App() {
 
   // Init GA4 & Set initial SEO Metadata
   useEffect(() => {
-    if (ANALYTICS_CONFIG.enabled && ANALYTICS_CONFIG.gaMeasurementId) {
-      initGA(ANALYTICS_CONFIG.gaMeasurementId);
+    if (analyticsConfig.enabled && analyticsConfig.gaMeasurementId) {
+      initGA(analyticsConfig.gaMeasurementId);
+      trackPageView(selectedPreset.path, selectedPreset.label);
     }
     updateDocumentMeta(selectedPreset);
   }, []);
@@ -85,6 +127,10 @@ export default function App() {
   // Listen for browser Back/Forward navigation (Popstate)
   useEffect(() => {
     const handlePopState = () => {
+      if (isAdminRoute()) {
+        setShowAdminModal(true);
+        return;
+      }
       const route = getCurrentRouteInfo();
       setSelectedPreset(route.preset);
       setActiveTool(route.tool);
@@ -92,6 +138,7 @@ export default function App() {
         setTargetFormat(route.preset.toFormat);
       }
       updateDocumentMeta(route.preset);
+      trackPageView(route.preset.path, route.preset.label);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -106,8 +153,10 @@ export default function App() {
       setTargetFormat(preset.toFormat);
     }
     navigateToPreset(preset);
+    trackPageView(preset.path, preset.label);
     trackEvent('select_preset_tool', { preset_id: preset.id, tool: preset.tool, path: preset.path });
   };
+
 
   // Process a single image
   const executeProcessSingle = async (
@@ -317,7 +366,7 @@ export default function App() {
       <div className="flex-1 w-full max-w-[1720px] mx-auto px-2 sm:px-4 lg:px-6 flex justify-center items-start gap-4">
         {/* Left Sticky Skyscraper Ad */}
         <aside className="hidden xl:block w-[160px] sticky top-20 pt-6 shrink-0">
-          <BannerAd type="skyscraper-left" settings={AD_CONFIG} />
+          <BannerAd type="skyscraper-left" settings={adConfig} />
         </aside>
 
         {/* Main Content Area */}
@@ -325,7 +374,7 @@ export default function App() {
           {/* Top Optimized Header Banner Ad */}
           <BannerAd
             type="header"
-            settings={AD_CONFIG}
+            settings={adConfig}
           />
 
           {/* Hero Introduction & Tool Title */}
@@ -402,7 +451,7 @@ export default function App() {
                 {/* Sidebar Ad Placement */}
                 <BannerAd
                   type="sidebar"
-                  settings={AD_CONFIG}
+                  settings={adConfig}
                 />
 
                 {/* Feature Highlights Card */}
@@ -466,7 +515,7 @@ export default function App() {
 
         {/* Right Sticky Skyscraper Ad */}
         <aside className="hidden xl:block w-[160px] sticky top-20 pt-6 shrink-0">
-          <BannerAd type="skyscraper-right" settings={AD_CONFIG} />
+          <BannerAd type="skyscraper-right" settings={adConfig} />
         </aside>
       </div>
 
@@ -484,6 +533,19 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Admin Panel Modal (Hidden by default, opened via URL /admin or Ctrl+Shift+A) */}
+      {showAdminModal && (
+        <AdminPanel
+          onClose={() => {
+            setShowAdminModal(false);
+            // If was on /admin URL, push state back to current preset
+            if (window.location.pathname.endsWith('/admin') || window.location.hash.includes('admin')) {
+              navigateToPreset(selectedPreset);
+            }
+          }}
+        />
+      )}
 
       {/* Crop Modal */}
       {cropModalImg && (
