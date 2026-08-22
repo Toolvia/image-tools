@@ -171,17 +171,21 @@ export const CropCanvas: React.FC<CropCanvasProps> = ({
           <span className="text-xs font-bold text-slate-500 uppercase mr-1">Aspect Ratio:</span>
           {[
             { label: 'Freeform', value: undefined },
-            { label: '1:1 Square', value: 1 },
-            { label: '16:9 Landscape', value: 16 / 9 },
-            { label: '9:16 Portrait', value: 9 / 16 },
-            { label: '4:3 Standard', value: 4 / 3 },
+            { label: '1:1 Square (US Visa)', value: 1 },
+            { label: '35:45 (Passport)', value: 35 / 45 },
+            { label: '4:6 (ID 4x6 cm)', value: 4 / 6 },
+            { label: '3:4 (ID 3x4 cm)', value: 3 / 4 },
+            { label: '16:9 (YouTube)', value: 16 / 9 },
+            { label: '9:16 (TikTok/Story)', value: 9 / 16 },
+            { label: '4:5 (IG Portrait)', value: 4 / 5 },
+            { label: 'FB Cover (820:312)', value: 820 / 312 },
           ].map((item, idx) => (
             <button
               key={idx}
               onClick={() => handleSetAspect(item.value)}
               className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
                 aspectRatio === item.value
-                  ? 'bg-indigo-600 text-white shadow-sm'
+                  ? 'bg-indigo-600 text-white shadow-xs'
                   : 'bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               }`}
             >

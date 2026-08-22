@@ -1,6 +1,6 @@
 export type ToolType = 'compress' | 'resize' | 'crop' | 'convert';
 
-export type ImageFormat = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/bmp' | 'image/x-icon';
+export type ImageFormat = 'image/jpeg' | 'image/png' | 'image/webp' | 'image/bmp' | 'image/x-icon' | 'application/pdf' | 'image/svg+xml';
 
 export interface ProcessedImage {
   id: string;
@@ -14,9 +14,10 @@ export interface ProcessedImage {
   originalHeight: number;
   processedWidth?: number;
   processedHeight?: number;
-  format: string; // e.g. 'jpg', 'png', 'webp'
+  format: string; // e.g. 'jpg', 'png', 'webp', 'ico', 'pdf', 'svg', 'base64'
   status: 'idle' | 'processing' | 'done' | 'error';
   errorMessage?: string;
+  base64String?: string;
 }
 
 export interface CropRect {
@@ -41,13 +42,41 @@ export interface AnalyticsSettings {
   enabled: boolean;
 }
 
+export interface PresetFaq {
+  question: string;
+  answer: string;
+}
+
+export interface PresetFeature {
+  title: string;
+  description: string;
+}
+
 export interface PresetTool {
   id: string;
+  path: string; // e.g. '/compress-jpg' or '/jpg-to-png'
   label: string;
   tool: ToolType;
+  category?: 'compress' | 'convert' | 'resize' | 'crop' | 'target-kb' | 'utility';
+  badge?: string;
   fromFormat?: string;
   toFormat?: string;
+  targetKB?: number;
   aspectRatio?: number;
   aspectLabel?: string;
+  filter?: 'none' | 'grayscale' | 'invert' | 'sepia';
+  circleCrop?: boolean;
   description: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
+  h1Title?: string;
+  h2Subtitle?: string;
+  howToSteps?: string[];
+  features?: PresetFeature[];
+  faqs?: PresetFaq[];
+  deepArticle?: {
+    heading: string;
+    paragraphs: string[];
+  };
 }

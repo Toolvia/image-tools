@@ -125,19 +125,22 @@ export const BatchProcessingList: React.FC<BatchProcessingListProps> = ({
             <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
               Output Format:
             </label>
-            <div className="grid grid-cols-5 gap-1.5">
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5">
               {[
                 { id: 'jpg', label: 'JPG' },
                 { id: 'png', label: 'PNG' },
                 { id: 'webp', label: 'WEBP' },
                 { id: 'bmp', label: 'BMP' },
                 { id: 'ico', label: 'ICO' },
+                { id: 'pdf', label: 'PDF' },
+                { id: 'svg', label: 'SVG' },
+                { id: 'base64', label: 'Base64' },
               ].map((fmt) => (
                 <button
                   key={fmt.id}
                   onClick={() => onTargetFormatChange(fmt.id)}
-                  className={`py-2 rounded-xl text-xs font-bold border transition-all ${
-                    targetFormat === fmt.id
+                  className={`py-2 px-1 text-center rounded-xl text-xs font-bold border transition-all ${
+                    targetFormat.toLowerCase() === fmt.id.toLowerCase()
                       ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
                       : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-indigo-400'
                   }`}

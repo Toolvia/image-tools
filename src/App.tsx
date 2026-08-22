@@ -9,6 +9,7 @@ import { TOOL_PRESETS } from './data/presets';
 import { AD_CONFIG, ANALYTICS_CONFIG } from './config';
 import { processImage, createBatchZip, downloadFile, getImageDimensions } from './utils/imageProcessor';
 import { initGA, trackEvent } from './utils/analytics';
+import { getCurrentRouteInfo, navigateToPreset, updateDocumentMeta } from './utils/router';
 
 // Components
 import { Header } from './components/Header';
@@ -19,6 +20,8 @@ import { CropCanvas } from './components/CropCanvas';
 import { ResizeOptions } from './components/ResizeOptions';
 import { BannerAd } from './components/BannerAd';
 import { DownloadModal } from './components/DownloadModal';
+import { ToolDirectory } from './components/ToolDirectory';
+import { SeoArticleSection } from './components/SeoArticleSection';
 
 import {
   Zap,
@@ -30,12 +33,15 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  // Determine initial route based on URL path / query / hash
+  const initialRoute = getCurrentRouteInfo();
+
   // Application State
-  const [activeTool, setActiveTool] = useState<ToolType>('compress');
-  const [selectedPreset, setSelectedPreset] = useState<PresetTool>(TOOL_PRESETS[0]);
+  const [activeTool, setActiveTool] = useState<ToolType>(initialRoute.tool);
+  const [selectedPreset, setSelectedPreset] = useState<PresetTool>(initialRoute.preset);
   const [images, setImages] = useState<ProcessedImage[]>([]);
   const [quality, setQuality] = useState<number>(0.8);
-  const [targetFormat, setTargetFormat] = useState<string>('jpg');
+  const [targetFormat, setTargetFormat] = useState<string>(initialRoute.preset.toFormat || 'jpg');
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
 
   // Resize Custom State
@@ -68,21 +74,39 @@ export default function App() {
     }
   }, [darkMode]);
 
-  // Init GA4 from hardcoded config
+  // Init GA4 & Set initial SEO Metadata
   useEffect(() => {
     if (ANALYTICS_CONFIG.enabled && ANALYTICS_CONFIG.gaMeasurementId) {
       initGA(ANALYTICS_CONFIG.gaMeasurementId);
     }
+    updateDocumentMeta(selectedPreset);
   }, []);
 
-  // Handle Preset Tool Pick
+  // Listen for browser Back/Forward navigation (Popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const route = getCurrentRouteInfo();
+      setSelectedPreset(route.preset);
+      setActiveTool(route.tool);
+      if (route.preset.toFormat) {
+        setTargetFormat(route.preset.toFormat);
+      }
+      updateDocumentMeta(route.preset);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  // Handle Preset Tool Pick & Update URL
   const handleSelectPreset = (preset: PresetTool) => {
     setSelectedPreset(preset);
     setActiveTool(preset.tool);
     if (preset.toFormat) {
       setTargetFormat(preset.toFormat);
     }
-    trackEvent('select_preset_tool', { preset_id: preset.id, tool: preset.tool });
+    navigateToPreset(preset);
+    trackEvent('select_preset_tool', { preset_id: preset.id, tool: preset.tool, path: preset.path });
   };
 
   // Process a single image
@@ -97,6 +121,10 @@ export default function App() {
       flipV?: boolean;
       width?: number;
       height?: number;
+      targetKB?: number;
+      filter?: 'grayscale' | 'invert' | 'sepia' | 'none';
+      circleCrop?: boolean;
+      stripMetadata?: boolean;
     } = {}
   ): Promise<ProcessedImage> => {
     try {
@@ -104,6 +132,10 @@ export default function App() {
       const fmt = overrideOptions.targetFormat ?? targetFormat;
       const w = overrideOptions.width ?? customWidth;
       const h = overrideOptions.height ?? customHeight;
+      const tkb = overrideOptions.targetKB ?? selectedPreset?.targetKB;
+      const flt = overrideOptions.filter ?? selectedPreset?.filter;
+      const cc = overrideOptions.circleCrop ?? selectedPreset?.circleCrop;
+      const sm = overrideOptions.stripMetadata ?? selectedPreset?.stripMetadata;
 
       const result = await processImage({
         file: item.file,
@@ -115,6 +147,10 @@ export default function App() {
         rotate: overrideOptions.rotate,
         flipH: overrideOptions.flipH,
         flipV: overrideOptions.flipV,
+        targetKB: tkb,
+        filter: flt,
+        circleCrop: cc,
+        stripMetadata: sm,
       });
 
       return {
@@ -124,6 +160,7 @@ export default function App() {
         processedWidth: result.width,
         processedHeight: result.height,
         format: fmt,
+        base64String: result.base64String,
         status: 'done',
       };
     } catch (err) {
@@ -277,7 +314,7 @@ export default function App() {
       />
 
       {/* Page Body with Left & Right Skyscraper Ads on Desktop */}
-      <div className="flex-1 w-full max-w-[1680px] mx-auto px-2 sm:px-4 lg:px-6 flex justify-center items-start gap-4">
+      <div className="flex-1 w-full max-w-[1720px] mx-auto px-2 sm:px-4 lg:px-6 flex justify-center items-start gap-4">
         {/* Left Sticky Skyscraper Ad */}
         <aside className="hidden xl:block w-[160px] sticky top-20 pt-6 shrink-0">
           <BannerAd type="skyscraper-left" settings={AD_CONFIG} />
@@ -299,11 +336,11 @@ export default function App() {
             </div>
 
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight bg-gradient-to-r from-slate-900 via-indigo-950 to-blue-900 dark:from-white dark:via-indigo-200 dark:to-blue-200 bg-clip-text text-transparent">
-              {selectedPreset?.label || 'Fast Online Image Compressor & Format Converter'}
+              {selectedPreset?.h1Title || selectedPreset?.label || 'Fast Online Image Compressor & Format Converter'}
             </h1>
 
             <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400">
-              {selectedPreset?.description ||
+              {selectedPreset?.h2Subtitle || selectedPreset?.description ||
                 'Compress JPG, PNG, and WebP images, resize dimensions, crop frames, and convert formats with ultra-fast browser speed.'}
             </p>
           </div>
@@ -319,9 +356,9 @@ export default function App() {
           {images.length === 0 ? (
             <ImageUploader onFilesSelected={handleFilesSelected} />
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
-              {/* Left 3 Columns: Batch Processing & Controls */}
-              <div className="lg:col-span-3 space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
+              {/* Left Main Columns: Batch Processing & Controls */}
+              <div className="lg:col-span-2 xl:col-span-3 space-y-6">
                 {/* Optional Custom Resize Sub-Panel */}
                 {activeTool === 'resize' && images[0] && (
                   <ResizeOptions
@@ -354,19 +391,19 @@ export default function App() {
 
               {/* Right 1 Column: Sidebar Ads & Fast Actions */}
               <div className="lg:col-span-1 space-y-6">
-                {/* Sidebar Ad Placement */}
-                <BannerAd
-                  type="sidebar"
-                  settings={AD_CONFIG}
-                />
-
                 {/* Add More Images Box */}
                 <div className="p-4 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm space-y-3">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500">
                     Add More Images
                   </h4>
-                  <ImageUploader onFilesSelected={handleFilesSelected} multiple={true} />
+                  <ImageUploader onFilesSelected={handleFilesSelected} multiple={true} compact={true} />
                 </div>
+
+                {/* Sidebar Ad Placement */}
+                <BannerAd
+                  type="sidebar"
+                  settings={AD_CONFIG}
+                />
 
                 {/* Feature Highlights Card */}
                 <div className="p-4 rounded-3xl bg-indigo-50/60 dark:bg-indigo-950/30 border border-indigo-200/60 dark:border-indigo-900/60 text-xs space-y-2">
@@ -416,6 +453,15 @@ export default function App() {
               </p>
             </div>
           </div>
+
+          {/* Dynamic Unique SEO Article, How-To & FAQs for Google Indexing */}
+          {selectedPreset && <SeoArticleSection preset={selectedPreset} />}
+
+          {/* Directory of All Tools for Internal Linking & Search Indexing */}
+          <ToolDirectory
+            currentPresetId={selectedPreset?.id || ''}
+            onSelectPreset={handleSelectPreset}
+          />
         </main>
 
         {/* Right Sticky Skyscraper Ad */}
@@ -469,3 +515,4 @@ export default function App() {
     </div>
   );
 }
+

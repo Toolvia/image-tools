@@ -1,38 +1,21 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Upload, Sparkles } from 'lucide-react';
 
 interface ImageUploaderProps {
   onFilesSelected: (files: File[]) => void;
   acceptFormats?: string;
   multiple?: boolean;
+  compact?: boolean;
 }
 
 export const ImageUploader: React.FC<ImageUploaderProps> = ({
   onFilesSelected,
   acceptFormats = 'image/jpeg,image/png,image/webp,image/bmp,image/gif',
   multiple = true,
+  compact = false,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // Sample test images provided for quick demonstration
-  const sampleImages = [
-    {
-      name: 'Landscape-Nature.jpg',
-      url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
-      label: '4K Landscape',
-    },
-    {
-      name: 'Portrait-HD.jpg',
-      url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=1200&q=80',
-      label: 'HD Portrait',
-    },
-    {
-      name: 'Product-Minimal.jpg',
-      url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80',
-      label: 'Product Shot',
-    },
-  ];
 
   // Clipboard paste handler
   useEffect(() => {
@@ -86,16 +69,41 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
     }
   };
 
-  const handleSelectSample = async (sample: { name: string; url: string }) => {
-    try {
-      const response = await fetch(sample.url);
-      const blob = await response.blob();
-      const file = new File([blob], sample.name, { type: blob.type || 'image/jpeg' });
-      onFilesSelected([file]);
-    } catch (err) {
-      console.error('Failed to load sample image:', err);
-    }
-  };
+  if (compact) {
+    return (
+      <div className="w-full">
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center group ${
+            isDragging
+              ? 'border-indigo-500 bg-indigo-50/80 dark:bg-indigo-950/40'
+              : 'border-slate-300 dark:border-slate-700 bg-slate-50/70 dark:bg-slate-800/50 hover:border-indigo-400 dark:hover:border-indigo-500 hover:bg-indigo-50/30'
+          }`}
+        >
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileInput}
+            accept={acceptFormats}
+            multiple={multiple}
+            className="hidden"
+          />
+          <div className="mb-2 h-9 w-9 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow group-hover:scale-105 transition-transform">
+            <Upload className="h-4 w-4" />
+          </div>
+          <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+            Upload More Images
+          </span>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+            Click or drag & drop files
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
@@ -139,37 +147,6 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
           <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-950/60 px-3 py-1 text-xs font-semibold text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
             Batch Processing Supported
           </span>
-        </div>
-      </div>
-
-      {/* Sample Images Section */}
-      <div className="mt-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-slate-800">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-            <ImageIcon className="h-3.5 w-3.5 text-indigo-500" />
-            Quick test with sample images (No upload required):
-          </span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {sampleImages.map((sample, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelectSample(sample)}
-              className="flex items-center gap-2.5 p-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all text-left group"
-            >
-              <img
-                src={sample.url}
-                alt={sample.label}
-                className="h-10 w-10 object-cover rounded-lg group-hover:scale-105 transition-transform"
-              />
-              <div>
-                <div className="text-xs font-bold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-                  {sample.label}
-                </div>
-                <div className="text-[10px] text-slate-400">Click to try sample</div>
-              </div>
-            </button>
-          ))}
         </div>
       </div>
     </div>

@@ -8,8 +8,25 @@
     <meta property="og:title" content="PicSwift - Online Image Tools" />
     <meta property="og:description" content="Fast, private in-browser image compression and conversion." />
     <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://toolvia.github.io/image-tools/" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://toolvia.github.io/image-tools/" />
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%234f46e5' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polygon points='13 2 3 14 12 14 11 22 21 10 12 10 13 2'/></svg>" />
+    
+    <!-- GitHub Pages Single Page Apps Routing Handler -->
+    <script>
+      (function(l) {
+        if (l.search[1] === '/' ) {
+          var decoded = l.search.slice(1).split('&').map(function(s) { 
+            return s.replace(/~and~/g, '&')
+          }).join('?');
+          window.history.replaceState(null, null,
+              l.pathname.slice(0, -1) + decoded + l.hash
+          );
+        }
+      }(window.location))
+    </script>
   </head>
   <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased selection:bg-indigo-500 selection:text-white">
     <div id="root"></div>

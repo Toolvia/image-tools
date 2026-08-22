@@ -1,9 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ProcessedImage } from '../types';
 import { AD_CONFIG } from '../config';
 import { formatBytes } from '../utils/imageProcessor';
 import { BannerAd } from './BannerAd';
-import { Download, CheckCircle2, X, Sparkles, FolderArchive, ArrowDown } from 'lucide-react';
+import { Download, CheckCircle2, X, Sparkles, FolderArchive, ArrowDown, Copy, Check } from 'lucide-react';
 
 interface DownloadModalProps {
   image?: ProcessedImage;
@@ -22,7 +22,16 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
   onDownloadSingle,
   onDownloadBatchZip,
 }) => {
+  const [copied, setCopied] = useState(false);
   const isBatch = batchImages.length > 0;
+
+  const handleCopyBase64 = async () => {
+    if (image?.base64String) {
+      await navigator.clipboard.writeText(image.base64String);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   // Calculate totals
   const totalOriginalSize = isBatch
@@ -105,13 +114,25 @@ export const DownloadModal: React.FC<DownloadModalProps> = ({
           )}
 
           {!isBatch && image && onDownloadSingle && (
-            <button
-              onClick={() => onDownloadSingle(image)}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.01]"
-            >
-              <Download className="h-5 w-5" />
-              Download Image Now ({formatBytes(image.processedSize || 0)})
-            </button>
+            <div className="space-y-2">
+              <button
+                onClick={() => onDownloadSingle(image)}
+                className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm shadow-lg shadow-indigo-500/30 transition-all hover:scale-[1.01]"
+              >
+                <Download className="h-5 w-5" />
+                Download Image Now ({formatBytes(image.processedSize || 0)})
+              </button>
+
+              {image.base64String && (
+                <button
+                  onClick={handleCopyBase64}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs transition-all border border-slate-300 dark:border-slate-700"
+                >
+                  {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Copy className="h-4 w-4" />}
+                  <span>{copied ? 'Base64 Data URI Copied to Clipboard!' : 'Copy Base64 Data URI'}</span>
+                </button>
+              )}
+            </div>
           )}
         </div>
 
