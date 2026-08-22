@@ -6,7 +6,7 @@ export const SITE_DOMAIN = 'https://toolvia.github.io';
 export const SITE_URL = `${SITE_DOMAIN}${BASE_PATH}`;
 
 /**
- * Checks if the current URL points to the secret admin portal (/admin, /#admin, ?admin=true)
+ * Checks if the current URL points to the secret admin portal (/admin, /#admin, ?admin, etc.)
  */
 export function isAdminRoute(): boolean {
   if (typeof window === 'undefined') return false;
@@ -17,7 +17,9 @@ export function isAdminRoute(): boolean {
   return (
     pathname.endsWith('/admin') ||
     pathname.endsWith('/admin/') ||
+    pathname.includes('/admin') ||
     hash.includes('admin') ||
+    search.includes('admin') ||
     search.includes('admin=true') ||
     search.includes('page=admin')
   );

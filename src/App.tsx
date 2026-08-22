@@ -124,9 +124,9 @@ export default function App() {
     updateDocumentMeta(selectedPreset);
   }, []);
 
-  // Listen for browser Back/Forward navigation (Popstate)
+  // Listen for browser Back/Forward navigation (Popstate) & Hashchange (#admin)
   useEffect(() => {
-    const handlePopState = () => {
+    const checkRoute = () => {
       if (isAdminRoute()) {
         setShowAdminModal(true);
         return;
@@ -141,8 +141,12 @@ export default function App() {
       trackPageView(route.preset.path, route.preset.label);
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener('popstate', checkRoute);
+    window.addEventListener('hashchange', checkRoute);
+    return () => {
+      window.removeEventListener('popstate', checkRoute);
+      window.removeEventListener('hashchange', checkRoute);
+    };
   }, []);
 
   // Handle Preset Tool Pick & Update URL
@@ -530,6 +534,14 @@ export default function App() {
 
           <div className="flex items-center gap-4 text-slate-400">
             <span>Fast Client-Side Image Processor</span>
+            <span>•</span>
+            <button
+              onClick={() => setShowAdminModal(true)}
+              className="text-slate-400/60 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer text-[11px]"
+              title="Admin Portal (Ctrl+Shift+A)"
+            >
+              Admin Portal
+            </button>
           </div>
         </div>
       </footer>
