@@ -25,8 +25,8 @@ export interface AnalyticsConfig {
 
 // 🔐 THÔNG TIN ĐĂNG NHẬP ADMIN (Thay đổi trực tiếp tại đây trong code)
 export const ADMIN_CONFIG: AdminCredentials = {
-  username: 'admin',
-  password: 'adminpassword123', // Bạn có thể đổi mật khẩu này theo ý muốn
+  username: 'DauDau',
+  password: 'Dau11042026@@', // Bạn có thể đổi mật khẩu này theo ý muốn
 };
 
 // 📢 CẤU HÌNH QUẢNG CÁO MẶC ĐỊNH (Thay đổi trực tiếp tại đây trong code)
